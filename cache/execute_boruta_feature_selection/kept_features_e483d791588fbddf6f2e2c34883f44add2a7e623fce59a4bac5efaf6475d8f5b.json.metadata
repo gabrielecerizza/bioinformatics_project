@@ -1,0 +1,29 @@
+{
+    "creation_time": 1623502166.609904,
+    "creation_time_human": "2021-06-12 14:49:26",
+    "time_delta": 3239.6718640327454,
+    "time_delta_human": "53 minutes and 59 seconds",
+    "file_dump_time": 0.6426892280578613,
+    "file_dump_time_human": "0 seconds",
+    "file_dump_size": 4409,
+    "file_dump_size_human": "4.4 kB",
+    "load_kwargs": {},
+    "dump_kwargs": {},
+    "function_name": "execute_boruta_feature_selection",
+    "function_file": "F:\\Copia HD G\\Universita\\UNIMI\\Bioinformatics\\project2\\bioproject\\data_processing.py:396",
+    "args_to_ignore": [
+        "X_train",
+        "y_train"
+    ],
+    "source": "@Cache(\n    cache_path=[\n        \"cache/{function_name}/kept_features_{_hash}.json\",\n        \"cache/{function_name}/discarded_features_{_hash}.json\"\n    ],\n    args_to_ignore=[\n        \"X_train\", \"y_train\"\n    ]\n)\ndef execute_boruta_feature_selection(\n    X_train: pd.DataFrame,\n    y_train: np.ndarray,\n    holdout_number: int,\n    use_validation_set: bool,\n    window_size: int,\n    region: str,\n    imputer_type: str = \"knn_imputer\",\n    scaler_type: str = \"robust_scaler\",\n    max_iter: int = 100\n) -> Tuple[List[str], List[str]]:\n    \"\"\"Returns tuple with lists of kept and discarded features.\n    \n    Parameters\n    ----------\n    X_train : pd.DataFrame\n        The data reserved for the input of the training \n        of the Boruta model.\n\n    y_train : np.ndarray\n        The data reserved for the output of the training \n        of the Boruta model.\n\n    holdout_number : int\n        The number of the current holdout.\n\n    use_validation_set : bool\n        Whether the validation set has been extracted from the\n        training set (True) or the test set is being used also\n        as validation set (False). The parameter is needed to\n        allow the cache decorator to store different features\n        in case the validation set is also the test set.\n\n    window_size : int\n        Size of the window used to sample the data. The parameter \n        is needed to allow the cache decorator to store different \n        features when using different window sizes.\n\n    region : str\n        The kind of regulatory region considered (enhancers or\n        promoters).\n\n    imputer_type : str or None\n        Name of the imputer that will be used, if any.\n        Similarly to the use_validation_set parameter,\n        imputer_type is needed for the cache decorator to\n        work properly when different imputers are used. \n\n    scaler_type : str or None\n        Name of the scaler that will be used, if any.\n        Similarly to the use_validation_set parameter,\n        scaler_type is needed for the cache decorator to\n        work properly when different scalers are used.\n\n    max_iter : int\n        Number of iterations to run Boruta for.\n\n    Returns\n    -------\n    A tuple a of lists. The first list contains the names of the \n    columns that the Boruta algorithm identified as features to\n    be kept. The second list contains the names of the columns\n    that should be discarded. \n    \"\"\"\n    \n    boruta_selector = BorutaPy(\n        RandomForestClassifier(\n            n_jobs=cpu_count(), \n            class_weight='balanced_subsample', \n            max_depth=5\n        ),\n        n_estimators='auto',\n        verbose=False,\n        alpha=0.05,  # p_value\n        max_iter=max_iter,\n        random_state=42\n    )\n\n    boruta_selector.fit(X_train.values, y_train)\n    \n    kept_features = list(\n        X_train.columns[boruta_selector.support_]\n    )\n    discarded_features = list(\n        X_train.columns[~boruta_selector.support_]\n    )\n    \n    return kept_features, discarded_features\n",
+    "backend_metadata": {},
+    "parameters": {
+        "max_iter": 100,
+        "scaler_type": "robust_scaler",
+        "imputer_type": "knn_imputer",
+        "holdout_number": 7,
+        "use_validation_set": true,
+        "window_size": 256,
+        "region": "promoters"
+    }
+}

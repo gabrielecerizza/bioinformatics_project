@@ -1,0 +1,49 @@
+{
+    "creation_time": 1623717647.9308798,
+    "creation_time_human": "2021-06-15 02:40:47",
+    "time_delta": 20.382372856140137,
+    "time_delta_human": "20 seconds",
+    "file_dump_time": 0.008027076721191406,
+    "file_dump_time_human": "0 seconds",
+    "file_dump_size": 304,
+    "file_dump_size_human": "304 Bytes",
+    "load_kwargs": {},
+    "dump_kwargs": {},
+    "function_name": "evaluate_sklearn_model",
+    "function_file": "F:\\Copia HD G\\Universita\\UNIMI\\Bioinformatics\\project2\\bioproject\\model_evaluation.py:457",
+    "args_to_ignore": [
+        "model",
+        "train_sequence",
+        "valid_sequence",
+        "test_sequence"
+    ],
+    "source": "@Cache(\n    cache_path=[\n        \"cache/{function_name}/{region}/{model_name}/\"\n        + \"history_{_hash}.csv.xz\",\n        \"cache/{function_name}/{region}/{model_name}/\"\n        + \"evaluations_{_hash}.csv.xz\",\n    ],\n    args_to_ignore=[\n        \"model\", \"train_sequence\", \"valid_sequence\", \"test_sequence\"\n    ]\n)\ndef evaluate_sklearn_model(\n    model: BaseEstimator,\n    model_name: str,\n    region: str,\n    train_sequence: Dict[str, np.ndarray],\n    valid_sequence: Dict[str, np.ndarray],\n    test_sequence: Dict[str, np.ndarray],\n    holdout_number: int,\n    use_feature_selection: bool,\n    use_validation_set: bool,\n    window_size: int,\n    resampling_strategy: str = None,\n    batch_size: int = 256,\n):\n    \"\"\"\n    Train and evaluate a given scikit-learn estimator model.\n\n    Parameters\n    ----------\n    model : BaseEstimator\n        Model to be trained and evaluated.\n\n    model_name : str\n        Name of the model.\n\n    region : str\n        The kind of regulatory region considered (enhancers or\n        promoters).\n\n    train_sequence : dict of str -> np.ndarray\n        Dictionary containing data (key \"X\") and labels\n        (key \"y\") of the training set.\n\n    valid_sequence : dict of str -> np.ndarray\n        Dictionary containing data (key \"X\") and labels\n        (key \"y\") of the validation set.\n\n    test_sequence : dict of str -> np.ndarray\n        Dictionary containing data (key \"X\") and labels\n        (key \"y\") of the test set.\n\n    holdout_number : int\n        Number of the current holdout iteration.\n\n    use_feature_selection : bool\n        Whether a feature selection algorithm has been applied\n        to the data.\n\n    use_validation_set : bool\n        Whether the validation set has been extracted from the\n        training set (True) or the test set is being used also\n        as validation set (False).\n\n    window_size : int\n        Size of the window used to sample the data. The parameter\n        is needed to allow the cache decorator to store different\n        values when using different window sizes.\n\n    resampling_strategy : str or None\n        The kind of resampling strategy (e.g. random\n        under-sampling, SMOTE over-sampling, etc.), if any,\n        applied to the data.\n\n    batch_size : int\n        Size of the batches to be fed to the model.\n\n    Returns\n    -------\n    An empty dictionary, for compatibility purposes, and\n    a DataFrame containing the evaluation scores of the model\n    on both the training set and test set.\n    \"\"\"\n    model.fit(train_sequence[\"X\"], train_sequence[\"y\"])\n    y_train_pred = model.predict(train_sequence[\"X\"])\n    y_test_pred = model.predict(test_sequence[\"X\"])\n    y_train_true = train_sequence[\"y\"]\n    y_test_true = test_sequence[\"y\"]\n    print(\"finished training\")\n\n    train_evaluation, test_evaluation = dict(), dict()\n\n    for metric_name, metric_func in (\n        (\"accuracy\", accuracy_score),\n        (\"AUROC\", roc_auc_score),\n        (\"AUPRC\", average_precision_score)\n    ):\n        train_evaluation[metric_name] = metric_func(y_train_true, y_train_pred)\n        test_evaluation[metric_name] = metric_func(y_test_true, y_test_pred)\n\n    train_evaluation[\"run_type\"] = \"train\"\n    test_evaluation[\"run_type\"] = \"test\"\n    for evaluation in (train_evaluation, test_evaluation):\n        evaluation[\"model_name\"] = model_name\n        evaluation[\"region\"] = region\n        evaluation[\"holdout_number\"] = holdout_number\n        evaluation[\"use_feature_selection\"] = use_feature_selection\n        evaluation[\"use_validation_set\"] = use_validation_set\n        evaluation[\"resampling_strategy\"] = resampling_strategy\n        evaluation[\"window_size\"] = window_size\n\n    evaluations = pd.DataFrame([\n        train_evaluation,\n        test_evaluation\n    ])\n    history = pd.DataFrame({\"hist\": [0], \"test\": [\"test\"]})\n\n    return history, evaluations\n",
+    "backend_metadata": {
+        "type": "pandas",
+        "columns_types": {
+            "accuracy": "float64",
+            "AUROC": "float64",
+            "AUPRC": "float64",
+            "run_type": "str",
+            "model_name": "str",
+            "region": "str",
+            "holdout_number": "int64",
+            "use_feature_selection": "bool",
+            "use_validation_set": "bool",
+            "resampling_strategy": "str",
+            "window_size": "int64"
+        },
+        "index_type": "int64",
+        "columns_names_type": "str"
+    },
+    "parameters": {
+        "batch_size": 256,
+        "resampling_strategy": null,
+        "model_name": "random_forest",
+        "holdout_number": 4,
+        "use_feature_selection": true,
+        "use_validation_set": true,
+        "window_size": 256,
+        "region": "promoters"
+    }
+}
