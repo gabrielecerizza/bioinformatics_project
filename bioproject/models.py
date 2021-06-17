@@ -10,12 +10,12 @@ from tensorflow.keras.layers import (
 )
 from tensorflow.keras.models import Model, Sequential
 from typing import Dict, Union
+from tensorflow.python.layers.base import Layer
+from ucsc_genomes_downloader import Genome
 
 # ===========
 # FFNN MODELS
 # ===========
-from tensorflow.python.layers.base import Layer
-from ucsc_genomes_downloader import Genome
 
 
 def build_ffnn_iwbbio2020(

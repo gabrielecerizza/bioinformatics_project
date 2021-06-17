@@ -5,3 +5,14 @@ numpy~=1.19.5
 imblearn~=0.0
 boruta~=0.3
 tqdm~=4.61.0
+epigenomic_dataset
+kerastuner
+cache_decorator
+keras_mixed_sequence
+tensorflow
+tqdm
+ucsc_genomes_downloader
+keras_bed_sequence
+boruta
+keras_mixed_sequence
+extra_keras_metrics
