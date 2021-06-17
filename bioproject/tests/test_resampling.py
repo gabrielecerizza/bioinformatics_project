@@ -27,4 +27,4 @@ def test_resampled_bed_sequence(enhancers_data, genome):
     X, _ = resample_data(bed, y, "over_sample", genome)
 
     seq = ResampledBedSequence(X, batch_size=256)
-    assert len(np.array(seq)) == 256
+    assert len(np.array(seq)[0]) == 256

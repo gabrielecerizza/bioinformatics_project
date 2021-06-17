@@ -198,7 +198,6 @@ def repeated_holdout_evaluation(
         test_size: float = 0.2,
         random_state: int = 42,
         use_validation_set: bool = True,
-        resampling_strategy: str = None,
         no_feature_selection: bool = False
 ) -> Tuple[List, List, List, List]:
     """Evaluate models according to a repeated holdout strategy.
@@ -222,8 +221,9 @@ def repeated_holdout_evaluation(
         Dictionary having the name of models as keys and as values
         tuples containing: 
             1) the corresponding models;
-            2) a tuple containing a function to generate data for
-            the models and optional parameters to use during 
+            2) a tuple containing a function to generate training
+            data for the models, a function to generate test data for
+            the models and optional parameters to use during
             training of the models.
 
     region : str
@@ -247,11 +247,6 @@ def repeated_holdout_evaluation(
         Whether the validation set has been extracted from the
         training set (True) or the test set is being used also
         as validation set (False).
-
-    resampling_strategy : str or None
-        The kind of resampling strategy (e.g. random 
-        under-sampling, SMOTE over-sampling, etc.), if any, 
-        applied to the data.
 
     no_feature_selection : bool
         Skip feature selection step.
@@ -362,6 +357,9 @@ def repeated_holdout_evaluation(
                 X_epi_valid = unf_X_epi_valid.values
                 X_epi_test = unf_X_epi_test.values
 
+            # Needed to train the MMNN model with pretrained FFNN and CNN.
+            mmnn_models = dict()
+
             for (
                     model_name,
                     (build_model, get_model_train_sequence, get_model_test_sequence, params)
@@ -375,14 +373,15 @@ def repeated_holdout_evaluation(
                     "genome": genome,
                     "bed_train": bed.iloc[train_idx],
                     "bed_valid": bed.iloc[valid_idx],
-                    "X_train": X_epi_train,
                     "X_valid": X_epi_valid,
                     "y_train": y_train,
                     "y_valid": y_valid,
-                    "region": region
+                    "region": region,
+                    "mmnn_models": mmnn_models
                 }
                 model_dict = build_model(X_epi_train, window_size, kwargs)
                 model = model_dict["model"]
+                mmnn_models[model_name] = model_dict
 
                 if issubclass(type(model), BaseEstimator):
                     history, performance = evaluate_sklearn_model(
@@ -410,8 +409,6 @@ def repeated_holdout_evaluation(
                         use_feature_selection=use_feature_selection,
                         use_validation_set=use_validation_set,
                         window_size=window_size,
-                        resampling_strategy=params[region]["resampling"] \
-                            if "resampling" in params[region] else resampling_strategy,
                         region=region,
                         **params[region]
                     )
@@ -441,8 +438,6 @@ def repeated_holdout_evaluation(
                         use_feature_selection=use_feature_selection,
                         use_validation_set=use_validation_set,
                         window_size=window_size,
-                        resampling_strategy=params[region]["resampling"] \
-                            if "resampling" in params[region] else resampling_strategy,
                         region=region,
                         **params[region]
                     )

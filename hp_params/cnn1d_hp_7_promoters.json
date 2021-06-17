@@ -1,0 +1,9 @@
+{
+    "num_conv_layers": 4,
+    "n_neurons0": 64,
+    "kernel_size0": 7,
+    "drop_rate": 0.33824958794948934,
+    "learning_rate": 0.01,
+    "n_neurons1": 48,
+    "kernel_size1": 4
+}

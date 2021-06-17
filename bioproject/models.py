@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from extra_keras_metrics import get_complete_binary_metrics
 from kerastuner.engine.hyperparameters import HyperParameters
 from tensorflow.keras import regularizers, optimizers
@@ -14,6 +15,7 @@ from typing import Dict, Union
 # FFNN MODELS
 # ===========
 from tensorflow.python.layers.base import Layer
+from ucsc_genomes_downloader import Genome
 
 
 def build_ffnn_iwbbio2020(
@@ -697,13 +699,15 @@ def build_cnn1d(
     hidden = Dense(
         128,
         activation="relu",
-        kernel_regularizer=regularizers.L2(l2_reg)
+        kernel_regularizer=regularizers.L2(l2_reg),
+        name="cnn1d_d1"
     )(hidden)
     hidden = Dropout(drop_rate)(hidden)
     last_hidden_cnn = Dense(
         64,
         activation="relu",
-        kernel_regularizer=regularizers.L2(l2_reg)
+        kernel_regularizer=regularizers.L2(l2_reg),
+        name="cnn1d_d2"
     )(hidden)
     output_cnn = Dense(1, activation="sigmoid")(last_hidden_cnn)
     model = Model(
@@ -713,6 +717,88 @@ def build_cnn1d(
         loss="binary_crossentropy",
         optimizer=optimizers.Nadam(learning_rate=learning_rate),
         metrics=get_complete_binary_metrics()
+    )
+
+    return {
+        "model": model,
+        "input_sequence_data": input_sequence_data,
+        "last_hidden_cnn": last_hidden_cnn
+    }
+
+
+def build_cnn1d_hp_support(
+    window_size: int,
+    num_conv_layers: int = 3,
+    n_neurons0: int = 32,
+    n_neurons1: int = 48,
+    kernel_size0: int = 2,
+    kernel_size1: int = 3,
+    drop_rate: float = 0.26707882319763404,
+    learning_rate: float = 0.0001
+) -> Dict[str, Union[Model, Layer]]:
+    """Build a custom 1D Convolutional Neural Network. This
+    function simplifies loading of models from hyperparameter
+    tuner.
+
+    Parameters
+    ----------
+    window_size : int
+        Size of the window used to sample the data.
+
+    num_conv_layers : int
+        Number of hidden convolutional layers in the network.
+
+    n_neurons0 : int
+        Number of neurons in convolutional hidden layers number 0
+        and 1, if present.
+
+    n_neurons1 : int
+        Number of neurons in convolutional hidden layers from
+        number 2 onward, if present.
+
+    kernel_size0 : int
+        Kernel size for convolutional hidden layers number 0
+        and 1, if present.
+
+    kernel_size1 : int
+        Kernel size for convolutional hidden layers from
+        number 2 onward, if present.
+
+    drop_rate : float
+        Rate for the dropout layers.
+
+    l2_reg : float
+        Amount of L2 regularization in the dense hidden layers.
+
+    learning_rate : float
+        Learning rate of the Nadam optimizer.
+
+    Returns
+    -------
+    The compiled 1D CNN.
+    """
+    input_sequence_data = Input((window_size, 4), name="input_sequence_data")
+    hidden = input_sequence_data
+
+    for num_conv_layer in range(num_conv_layers):
+        if num_conv_layer >= 2:
+            hidden = Conv1D(n_neurons1, kernel_size=kernel_size1)(hidden)
+            hidden = BatchNormalization()(hidden)
+            hidden = ReLU()(hidden)
+        else:
+            hidden = Conv1D(n_neurons0, kernel_size=kernel_size0)(hidden)
+            hidden = BatchNormalization()(hidden)
+            hidden = ReLU()(hidden)
+
+        if num_conv_layer % 2 != 0:
+            hidden = MaxPool1D(pool_size=2)(hidden)
+
+    last_hidden_cnn, model = finalize_cnn1d(
+        drop_rate,
+        hidden,
+        input_sequence_data,
+        learning_rate,
+        "cnn1d"
     )
 
     return {
@@ -844,13 +930,21 @@ def finalize_cnn1d(
 def build_mmnn(
     X_train: np.ndarray = None,
     window_size: int = None,
-    models: Dict[str, Dict] = None,
+    mmnn_models: Dict[str, Dict] = None,
     pretrained: bool = False,
     ffnn_model_name: str = "ffnn",
-    cnn_model_name: str = "cnn1d"
+    cnn_model_name: str = "cnn1d",
+    holdout_number: int = None,
+    genome: Genome = None,
+    bed_train: pd.DataFrame = None,
+    bed_valid: pd.DataFrame = None,
+    X_valid: np.ndarray = None,
+    y_train: np.ndarray = None,
+    y_valid: np.ndarray = None,
+    region: str = None
 ) -> Dict[str, Model]:
-    """Build a Multi-Modal Neural Network composed by a Feed-Forward
-    Neural Network learning from epigenomic data and by a
+    """Build a Multi-Modal Neural Network composed of a Feed-Forward
+    Neural Network learning from epigenomic data and a
     Convolutional Neural Network learning from sequence data.
 
     Parameters
@@ -861,7 +955,7 @@ def build_mmnn(
     window_size : int or None
         Size of the window used to sample the data.
 
-    models : dict of str -> Dict or None
+    mmnn_models : dict of str -> Dict or None
         Dictionary having the name of models as keys and as values
         dictionaries containing, at the key "model", the corresponding
         models. When the "pretrained" is True, the FFNN and CNN models
@@ -879,7 +973,44 @@ def build_mmnn(
 
     cnn_model_name: str
         Name to use as key value in the models dictionary to retrieve
-        the CNN model.    
+        the CNN model.
+
+    holdout_number : int or None
+        Number of the holdout. This parameter is needed only to comply
+        with the interface required by the evaluation functions.
+
+    genome : Genome
+        Genome object needed to retrieve the nucleotide sequences
+        from the DataFrame representing a BED object. This parameter
+        is needed only to comply with the interface required by the
+        evaluation functions.
+
+    bed_train : pd.DataFrame or None
+        BED representation of training data. This parameter is needed
+        only to comply with the interface required by the evaluation functions.
+
+    bed_valid : pd.DataFrame or None
+        BED representation of validation data. This parameter is needed
+        only to comply with the interface required by the evaluation functions.
+
+    X_valid : np.ndarray or None
+        Numpy array of epigenomic training data. This parameter is needed
+        only to comply with the interface required by the evaluation functions.
+
+    y_train : np.ndarray or None
+        Numpy array of binary class labels annotated as 0 and 1 for
+        training data. This parameter is needed only to comply
+        with the interface required by the evaluation functions.
+
+    y_valid : np.ndarray or None
+        Numpy array of binary class labels annotated as 0 and 1 for
+        validation data. This parameter is needed only to comply
+        with the interface required by the evaluation functions.
+
+    region : str = None
+        String representing the desired resampling strategy. This parameter
+        is needed only to comply with the interface required by the
+        evaluation functions.
 
     Returns
     -------
@@ -893,8 +1024,8 @@ def build_mmnn(
             window_size
         )
     else:
-        ffnn_dict = models[ffnn_model_name]
-        cnn_dict = models[cnn_model_name]
+        ffnn_dict = mmnn_models[ffnn_model_name]
+        cnn_dict = mmnn_models[cnn_model_name]
 
     input_epigenomic_data = ffnn_dict["input_epigenomic_data"]
     last_hidden_ffnn = ffnn_dict["last_hidden_ffnn"]
@@ -906,10 +1037,12 @@ def build_mmnn(
         last_hidden_cnn
     ])
 
-    hidden_mmnn = Dense(128, activation="relu")(
+    hidden_mmnn = Dense(128, activation="relu", name="mmnn_d1")(
         concatenation_layer
     )
-    last_hidden_mmnn = Dense(64, activation="relu")(hidden_mmnn)
+    last_hidden_mmnn = Dense(64, activation="relu", name="mmnn_d2")(
+        hidden_mmnn
+    )
     output_mmnn = Dense(1, activation="sigmoid")(last_hidden_mmnn)
 
     model = Model(

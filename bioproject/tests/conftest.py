@@ -48,7 +48,8 @@ def random_dataset():
 def enhancers_data(window_size, cell_line):
     X, y = active_enhancers_vs_inactive_enhancers(
         cell_line=cell_line,
-        window_size=window_size
+        window_size=window_size,
+        binarize=True
     )
     y = pd.DataFrame(y[cell_line].values)
     bed = X.reset_index().rename_axis(None, axis=1)

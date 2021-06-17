@@ -1,0 +1,7 @@
+{
+    "num_layers": 4,
+    "n_neurons0": 224,
+    "l2_reg": 0.030683671954007743,
+    "learning_rate": 0.0001,
+    "n_neurons1": 128
+}

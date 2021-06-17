@@ -651,9 +651,16 @@ def get_mmnn_sequence(
     and epigenomic data.
     """
     if resampling_strategy is not None:
+        # y should be the same for both types
+        # of data. Need a way to enforce that.
+        raise ValueError(
+            "Resampling not yet supported for MMNN"
+        )
+        """
         X_seq, y = resample_data(
             bed, y, resampling_strategy, genome
         )
+        
         X_epi, _ = resample_data(
             X, y, resampling_strategy
         )
@@ -673,6 +680,7 @@ def get_mmnn_sequence(
                 batch_size=batch_size
             )
         )
+        """
     else:
         return MixedSequence(
             x={

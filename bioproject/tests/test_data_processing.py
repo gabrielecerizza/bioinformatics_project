@@ -167,9 +167,9 @@ def test_execute_preprocessing_scaler_exc(random_dataset):
 def test_execute_boruta_feature_selection(random_dataset):
     X_train, _, _, y_train, _, _ = random_dataset
     kept, _ = execute_boruta_feature_selection(
-        X_train, y_train.values.ravel(), 20, False, 256
+        X_train, y_train.values.ravel(), 20, False, 256, "enhancers"
     )
-    assert kept == [1, 3]
+    assert kept == [0, 3]
 
 
 def test_get_ffnn_sequence(random_dataset):
@@ -188,7 +188,7 @@ def test_get_cnn_sequence(data_dictionaries, genome):
     seq = get_cnn_sequence(
         genome, beds["enhancers"], labels["enhancers"].values.ravel()
     )
-    assert_first_batch(np.array(seq)[0][1])
+    assert (np.array(seq)[0][1][0] == 0) or (np.array(seq)[0][1][0] == 1)
 
 
 def test_get_mmnn_sequence(data_dictionaries, genome):
@@ -199,4 +199,4 @@ def test_get_mmnn_sequence(data_dictionaries, genome):
         epigenomes["enhancers"].values,
         labels["enhancers"].values.ravel()
     )
-    assert_first_batch(np.array(seq)[0][1])
+    assert (np.array(seq)[0][1][0] == 0) or (np.array(seq)[0][1][0] == 1)

@@ -1,4 +1,7 @@
+from multiprocessing import cpu_count
+
 import pytest
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 
 from bioproject.data_processing import get_ffnn_sequence, get_cnn_sequence
@@ -88,9 +91,14 @@ def test_repeated_holdout_evaluation(
 
     models = {
         "ffnn": (
-            lambda _X_train, _: build_ffnn(_X_train),
-            lambda _genome, _bed, _X, _y: get_ffnn_sequence(_X, _y),
-            {}
+            lambda X_train, window_size, kwargs: build_ffnn(X_train),
+            lambda genome, bed, X, y: get_ffnn_sequence(
+                X, y
+            ),
+            lambda genome, bed, X, y: get_ffnn_sequence(
+                X, y
+            ),
+            {"enhancers": {}, "promoters": {}}
         )
     }
 
@@ -115,9 +123,14 @@ def test_repeated_holdout_evaluation_exception(
 
     models = {
         "ffnn": (
-            lambda _X_train, _: build_ffnn(_X_train),
-            lambda _genome, _bed, _X, _y: get_ffnn_sequence(_X, _y),
-            {}
+            lambda X_train, window_size, kwargs: build_ffnn(X_train),
+            lambda genome, bed, X, y: get_ffnn_sequence(
+                X, y
+            ),
+            lambda genome, bed, X, y: get_ffnn_sequence(
+                X, y
+            ),
+            {"enhancers": {}, "promoters": {}}
         )
     }
 
@@ -144,10 +157,20 @@ def test_evaluate_sklearn_model(
         return {"X": X, "y": y}
 
     models = {
-        "svc": (
-            lambda _X_train, _y_train: {"model": SVC()},
-            lambda _genome, _bed, _X, _y: get_sklearn_sequence(_X, _y),
-            {}
+        "random_forest": (
+            lambda X_train, window_size, kwargs: {
+                "model": RandomForestClassifier(
+                    n_estimators=600,
+                    class_weight="balanced_subsample",
+                    max_depth=5,
+                    min_samples_leaf=100,
+                    n_jobs=cpu_count(),
+                    verbose=False
+                )
+            },
+            lambda genome, bed, X, y: get_sklearn_sequence(X, y),
+            lambda genome, bed, X, y: get_sklearn_sequence(X, y),
+            {"enhancers": {}, "promoters": {}}
         )
     }
 
