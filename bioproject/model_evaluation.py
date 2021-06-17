@@ -16,7 +16,7 @@ from tqdm.notebook import tqdm_notebook
 from typing import Dict, List, Tuple
 from ucsc_genomes_downloader import Genome
 
-from .data_processing import (
+from bioproject.data_processing import (
     execute_boruta_feature_selection,
     execute_preprocessing
 )
