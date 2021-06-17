@@ -6,7 +6,7 @@ imblearn~=0.0
 boruta~=0.3
 tqdm~=4.61.0
 epigenomic_dataset
-kerastuner
+keras-tuner
 cache_decorator
 keras_mixed_sequence
 tensorflow
