@@ -6,7 +6,9 @@ from sklearn.svm import SVC
 
 from bioproject.data_processing import get_ffnn_sequence, get_cnn_sequence
 from bioproject.models import build_cnn1d, build_ffnn
-from bioproject.model_evaluation import *
+from bioproject.model_evaluation import (
+    evaluate_model, repeated_holdout_evaluation
+)
 
 
 def test_evaluate_model_cnn(enhancers_train_test_bed, window_size, genome):
