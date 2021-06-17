@@ -10,3 +10,4 @@ Install with:
 
     pip install -e .
 
+Test coverage in htmlcov directory and coverage.xml file.
