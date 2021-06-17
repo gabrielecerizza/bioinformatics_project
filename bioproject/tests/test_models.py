@@ -2,7 +2,12 @@ import kerastuner as kt
 from kerastuner import Hyperband
 
 from bioproject.data_processing import get_cnn_sequence
-from bioproject.models import *
+from bioproject.models import (
+    build_ffnn, build_mmnn, build_cnn1d, build_ffnn_hp,
+    build_deepcape, build_decode, build_deep_enhancer,
+    build_ffnn_iwbbio2020, build_cnn_iwbbio2020,
+    build_cnn1d_hp, build_cnn1d_hp_support
+)
 
 
 def test_build_ffnn_iwbbio2020(random_dataset, capsys):
