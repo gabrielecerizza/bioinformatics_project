@@ -17,3 +17,4 @@ boruta
 keras_mixed_sequence
 extra_keras_metrics
 coverage
+pytest-cov
