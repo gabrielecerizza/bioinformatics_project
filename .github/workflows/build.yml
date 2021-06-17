@@ -15,9 +15,9 @@ jobs:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
       # Test
-      - name: Test with pytest
-        run: |
-          pytest --cov=./ --cov-report=xml --doctest-modules
+      #- name: Test with pytest
+      #  run: |
+      #    pytest --cov=./ --cov-report=xml --doctest-modules
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
