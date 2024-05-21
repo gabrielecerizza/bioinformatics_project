@@ -5,5 +5,3 @@ Project for the Bioinformatics course in University of Milan (UNIMI), academic y
 Install with:
 
     pip install -e .
-
-Test coverage in htmlcov directory and coverage.xml file.
